@@ -2,7 +2,7 @@ import sqlite3
 import pandas as pd
 from pathlib import Path
 
-DB_FILE = Path("liquidity_cache.db")
+DB_FILE = Path("/opt/render/project/data/liquidity_cache.db")
 conn = sqlite3.connect(DB_FILE)
 cur = conn.cursor()
 
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS stock_data (
 ''')
 conn.commit()
 
-def write_to_db(ticker, df):
+def insert_to_db(ticker, df):
     df = df.copy()
     df['ticker'] = ticker
     df = df[['ticker', 'date', 'adj_close', 'volume', 'return', 'amihud', 'z_score', 'if_anomaly']]
