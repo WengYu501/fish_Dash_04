@@ -11,6 +11,8 @@ import database
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 app.title = "Liquidity Dashboard"
 
+server = app.server  # 供 Gunicorn 使用
+
 stock_list = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA']
 
 def fetch_data(ticker):
@@ -27,7 +29,7 @@ def fetch_data(ticker):
     df['IF_Anomaly'] = model.fit_predict(df[['Amihud']].fillna(0))
     df = df.reset_index()
     df.rename(columns={'Date': 'date', 'Adj Close': 'adj_close', 'Volume': 'volume'}, inplace=True)
-    database.write_to_db(ticker, df)
+    database.insert_to_db(ticker, df)
     df.set_index('date', inplace=True)
     return df
 
@@ -57,10 +59,10 @@ def render_tab(tab, ticker):
     df = fetch_data(ticker)
     if tab == 'overview':
         fig_amihud = go.Figure()
-        fig_amihud.add_trace(go.Scatter(x=df.index, y=df['amihud'], mode='lines', name='Amihud Ratio'))
+        fig_amihud.add_trace(go.Scatter(x=df.index, y=df['Amihud'], mode='lines', name='Amihud Ratio'))
         fig_amihud.add_trace(go.Scatter(
-            x=df[df['if_anomaly'] == -1].index,
-            y=df[df['if_anomaly'] == -1]['amihud'],
+            x=df[df['IF_Anomaly'] == -1].index,
+            y=df[df['IF_Anomaly'] == -1]['Amihud'],
             mode='markers', marker=dict(color='red', size=6), name='Anomaly'))
         fig_amihud.update_layout(title=f'{ticker} Amihud Illiquidity with Anomalies')
 
@@ -97,14 +99,11 @@ def update_backtest(start_date, end_date, ticker):
     mask = (df.index >= pd.to_datetime(start_date)) & (df.index <= pd.to_datetime(end_date))
     df_range = df.loc[mask]
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=df_range.index, y=df_range['return'].cumsum(), mode='lines', name='Cumulative Return'))
-    fig.add_trace(go.Scatter(x=df_range.index, y=df_range['amihud'], mode='lines', name='Amihud Ratio', yaxis='y2'))
+    fig.add_trace(go.Scatter(x=df_range.index, y=df_range['Return'].cumsum(), mode='lines', name='Cumulative Return'))
+    fig.add_trace(go.Scatter(x=df_range.index, y=df_range['Amihud'], mode='lines', name='Amihud Ratio', yaxis='y2'))
     fig.update_layout(
         title=f'{ticker} Backtest: Return vs Amihud',
         yaxis=dict(title='Cumulative Return'),
         yaxis2=dict(title='Amihud Ratio', overlaying='y', side='right')
     )
     return dcc.Graph(figure=fig)
-
-if __name__ == '__main__':
-    app.run(debug=False)
