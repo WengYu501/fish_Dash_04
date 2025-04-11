@@ -2,7 +2,7 @@ name: Daily Liquidity Update
 
 on:
   schedule:
-    - cron: '0 1 * * *'  # 每日台灣時間早上 9 點 (UTC+1)
+    - cron: '0 1 * * *'  # 每日台灣時間早上 9 點 (UTC 01:00)
   workflow_dispatch:
 
 jobs:
@@ -24,12 +24,8 @@ jobs:
 
       - name: Update SQLite cache
         run: |
-          python update_cache.py
+          python update.py
 
-      - name: Commit and push updated DB
+      - name: Trigger Render deploy
         run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git add liquidity_cache.db
-          git commit -m "Auto update: liquidity cache DB"
-          git push
+          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
