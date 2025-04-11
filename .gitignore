@@ -4,3 +4,8 @@ __pycache__/
 *.pyd
 liquidity_cache.db
 .env
+venv/
+.vscode/
+.idea/
+*.log
+fish_Dash_03.zip
